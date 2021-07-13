@@ -44,7 +44,7 @@ func (gcs *GCS) Connect() error {
 
 func (gcs *GCS) Walk(gcsPath string, recursive bool, process func(r RemoteFile) error) error {
 	ctx := context.Background()
-	delimiter := "/"
+	delimiter := ""
 	if !recursive {
 		delimiter = "/"
 	}
