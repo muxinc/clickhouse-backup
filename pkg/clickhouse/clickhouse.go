@@ -42,6 +42,7 @@ func (ch *ClickHouse) Connect() error {
 	params.Add("password", ch.Config.Password)
 	params.Add("database", "system")
 	params.Add("receive_timeout", timeoutSeconds)
+	params.Add("read_timeout", timeoutSeconds)
 	params.Add("send_timeout", timeoutSeconds)
 	if ch.Config.Secure {
 		params.Add("secure", "true")
@@ -51,6 +52,7 @@ func (ch *ClickHouse) Connect() error {
 		params.Add("log_queries", "0")
 	}
 	connectionString := fmt.Sprintf("tcp://%v:%v?%s", ch.Config.Host, ch.Config.Port, params.Encode())
+	log.Debug(connectionString)
 	if ch.conn, err = sqlx.Open("clickhouse", connectionString); err != nil {
 		return err
 	}
