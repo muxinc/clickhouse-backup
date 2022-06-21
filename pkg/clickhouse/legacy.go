@@ -10,72 +10,9 @@ import (
 	"github.com/AlexAkulov/clickhouse-backup/pkg/metadata"
 )
 
-// // GetBackupTables - return list of backups of tables that can be restored
-// func (ch *ClickHouse) GetBackupTables(backupName string) (map[string]BackupTable, error) {
-// 	dataPath, err := ch.GetDefaultPath()
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	metadataDir := filepath.Join(dataPath, "backup", backupName, "metadata")
-// 	result := map[string]BackupTable{}
-
-// 	err = filepath.Walk(metadataDir, func(filePath string, info os.FileInfo, err error) error {
-// 		if err != nil {
-// 			return err
-// 		}
-// 		if !strings.HasSuffix(info.Name(), ".json") || info.IsDir() {
-// 			return nil
-// 		}
-// 		if info.IsDir() {
-// 			filePath = filepath.ToSlash(filePath) // fix fucking Windows slashes
-// 			relativePath := strings.Trim(strings.TrimPrefix(filePath, backupShadowPath), "/")
-// 			parts := strings.Split(relativePath, "/")
-// 			if len(parts) != totalNum {
-// 				return nil
-// 			}
-
-// 			tDB, _ := url.PathUnescape(parts[dbNum])
-// 			tName, _ := url.PathUnescape(parts[tableNum])
-// 			fullTableName := fmt.Sprintf("%s.%s", tDB, tName)
-
-// 			allparthash := allpartsBackup[fullTableName]
-// 			var hoaf, houf, uhocf string
-// 			for _, parthash := range allparthash {
-// 				if parthash.Name == parts[partNum] {
-// 					hoaf = parthash.HashOfAllFiles
-// 					houf = parthash.HashOfUncompressedFiles
-// 					uhocf = parthash.UncompressedHashOfCompressedFiles
-// 				}
-// 			}
-
-// 			partition := BackupPartition{
-// 				Name:                              parts[partNum],
-// 				Path:                              filePath,
-// 				HashOfAllFiles:                    hoaf,
-// 				HashOfUncompressedFiles:           houf,
-// 				UncompressedHashOfCompressedFiles: uhocf,
-// 			}
-
-// 			if t, ok := result[fullTableName]; ok {
-// 				t.Partitions["default"] = append(t.Partitions["default"], partition)
-// 				result[fullTableName] = t
-// 				return nil
-// 			}
-// 			result[fullTableName] = BackupTable{
-// 				Database:   tDB,
-// 				Name:       tName,
-// 				Partitions: map[string][]BackupPartition{"default": {partition}},
-// 			}
-// 			return nil
-// 		}
-// 		return nil
-// 	})
-// 	return result, err
-// }
-
 // GetBackupTablesLegacy - return list of backups of tables that can be restored
-func (ch *ClickHouse) GetBackupTablesLegacy(backupName string) ([]metadata.TableMetadata, error) {
-	dataPath, err := ch.GetDefaultPath()
+func (ch *ClickHouse) GetBackupTablesLegacy(backupName string, disks []Disk) ([]metadata.TableMetadata, error) {
+	dataPath, err := ch.GetDefaultPath(disks)
 	if err != nil {
 		return nil, err
 	}
@@ -99,19 +36,7 @@ func (ch *ClickHouse) GetBackupTablesLegacy(backupName string) ([]metadata.Table
 	}
 
 	var allpartsBackup map[string][]metadata.Part
-	// hashPath := path.Join(dataPath, "backup", backupName, hashfile)
-	// log.Printf("Reading part hashes %s", hashPath)
-	// bytes, err := ioutil.ReadFile(hashPath)
-	// if err != nil {
-	// 	log.Printf("Unable to read hash file %s", hashPath)
-	// 	//return nil, fmt.Errorf("Unable to read hash file %s", hashPath)
-	// } else {
-	// 	err = json.Unmarshal(bytes, &allpartsBackup)
-	// 	if err != nil {
-	// 		return nil, fmt.Errorf("issue occurred while reading hash file %s", hashPath)
-	// 	}
-	// }
-	// TODO: нам больше не нужно заполнять Partitions из файла теперь их можно взять из таблицы detached
+	// TODO: we don't need anymore fill Partitions from file, we can get it from `system.detached_parts` table
 	tables := make(map[string]metadata.TableMetadata)
 	err = filepath.Walk(backupShadowPath, func(filePath string, info os.FileInfo, err error) error {
 		if err != nil {
