@@ -80,9 +80,7 @@ func (b *Backuper) Download(backupName string, tablePattern string, partitions [
 	if err := b.init(disks); err != nil {
 		return err
 	}
-
-	// fix for gcs
-	remoteBackups, err := b.dst.BackupFolderList(backupName, b.cfg.General.RemoteStorage)
+	remoteBackups, err := b.dst.BackupList(true, backupName)
 	if err != nil {
 		return err
 	}
