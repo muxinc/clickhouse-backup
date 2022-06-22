@@ -291,7 +291,7 @@ func (bd *BackupDestination) BackupList(parseMetadata bool, parseMetadataOnly st
 // use this function only for gcs
 func (bd *BackupDestination) BackupFolderList(backupFolderName string, remoteStorage string) ([]Backup, error) {
 	if remoteStorage != "gcs" {
-		return bd.BackupList()
+		return bd.BackupList(true, backupFolderName)
 	}
 	result := []Backup{}
 	err := bd.Walk(backupFolderName, false, func(o RemoteFile) error {
@@ -300,7 +300,7 @@ func (bd *BackupDestination) BackupFolderList(backupFolderName string, remoteSto
 			result = append(result, Backup{
 				metadata.BackupMetadata{
 					BackupName: backupName,
-					DataSize:   o.Size(),
+					DataSize:   uint64(o.Size()),
 				},
 				true,
 				fileExtension,
@@ -375,7 +375,7 @@ func (bd *BackupDestination) BackupFolderList(backupFolderName string, remoteSto
 	return result, err
 }
 
-func (bd *BackupDestination) CompressedStreamDownload(remotePath string, localPath string) error {
+func (bd *BackupDestination) DownloadCompressedStream(ctx context.Context, remotePath string, localPath string) error {
 	if err := os.MkdirAll(localPath, 0750); err != nil {
 		return err
 	}
