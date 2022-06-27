@@ -2,9 +2,8 @@ package backup
 
 import (
 	"fmt"
-
-	"github.com/AlexAkulov/clickhouse-backup/config"
 	"github.com/AlexAkulov/clickhouse-backup/pkg/clickhouse"
+	"github.com/AlexAkulov/clickhouse-backup/pkg/config"
 	"github.com/AlexAkulov/clickhouse-backup/pkg/new_storage"
 )
 
@@ -13,36 +12,29 @@ type Backuper struct {
 	ch              *clickhouse.ClickHouse
 	dst             *new_storage.BackupDestination
 	Version         string
-	DiskMap         map[string]string
+	DiskToPathMap   map[string]string
 	DefaultDataPath string
 }
 
-type BackupOptions struct {
-	BackupName        string
-	TablePattern      string
-	DiffFrom          string
-	SchemaOnly        bool
-	DataOnly          bool
-	DropBeforeRestore bool
-}
-
-func (b *Backuper) init() error {
+func (b *Backuper) init(disks []clickhouse.Disk) error {
 	var err error
-	b.DefaultDataPath, err = b.ch.GetDefaultPath()
+	if disks == nil {
+		disks, err = b.ch.GetDisks()
+		if err != nil {
+			return err
+		}
+	}
+	b.DefaultDataPath, err = b.ch.GetDefaultPath(disks)
 	if err != nil {
 		return ErrUnknownClickhouseDataPath
-	}
-	disks, err := b.ch.GetDisks()
-	if err != nil {
-		return err
 	}
 	diskMap := map[string]string{}
 	for _, disk := range disks {
 		diskMap[disk.Name] = disk.Path
 	}
-	b.DiskMap = diskMap
+	b.DiskToPathMap = diskMap
 	if b.cfg.General.RemoteStorage != "none" {
-		b.dst, err = new_storage.NewBackupDestination(b.cfg)
+		b.dst, err = new_storage.NewBackupDestination(b.cfg, true)
 		if err != nil {
 			return err
 		}

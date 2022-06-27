@@ -2,12 +2,11 @@ package storage
 
 import (
 	"crypto/tls"
+	"github.com/AlexAkulov/clickhouse-backup/pkg/config"
 	"io"
 	"net/http"
 	"strings"
 	"time"
-
-	"github.com/AlexAkulov/clickhouse-backup/config"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
@@ -90,7 +89,6 @@ func (s *S3) GetFileReader(key string) (io.ReadCloser, error) {
 func (s *S3) PutFile(key string, r io.ReadCloser) error {
 	uploader := s3manager.NewUploader(s.session)
 	uploader.Concurrency = 1
-	uploader.PartSize = s.Config.PartSize
 	var sse *string
 	if s.Config.SSE != "" {
 		sse = aws.String(s.Config.SSE)
